@@ -26,6 +26,18 @@ public class ICount extends CodeDumper {
         super(packageNameList, writeDestination);
     }
 
+    public static long getExecutedMethodCount() {
+        return nmethods;
+    }
+
+    public static long getExecutedBasicBlockCount() {
+        return nblocks;
+    }
+
+    public static long getExecutedInstructionCount() {
+        return ninsts;
+    }
+
     public static void incBasicBlock(int position, int length) {
         nblocks++;
         ninsts += length;

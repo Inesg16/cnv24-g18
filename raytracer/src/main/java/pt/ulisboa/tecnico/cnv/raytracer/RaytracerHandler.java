@@ -19,6 +19,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import pt.ulisboa.tecnico.cnv.javassist.tools.ICount;
+
 public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String, String>, String> {
 
     private final static ObjectMapper mapper = new ObjectMapper();
@@ -70,6 +72,17 @@ public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String,
         OutputStream os = he.getResponseBody();
         os.write(response.getBytes());
         os.close();
+
+        // After completing the request, retrieve metrics from ICount
+        long methodsExecuted = ICount.getExecutedMethodCount();
+        long basicBlocksExecuted = ICount.getExecutedBasicBlockCount();
+        long instructionsExecuted = ICount.getExecutedInstructionCount();
+
+        // Log metrics (you can also save them to a file here)
+        System.out.println("Metrics after request:");
+        System.out.println("Methods Executed: " + methodsExecuted);
+        System.out.println("Basic Blocks Executed: " + basicBlocksExecuted);
+        System.out.println("Instructions Executed: " + instructionsExecuted);
     }
 
     public Map<String, String> queryToMap(String query) {
