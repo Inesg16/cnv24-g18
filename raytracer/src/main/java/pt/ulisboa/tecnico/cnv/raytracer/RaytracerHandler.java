@@ -73,16 +73,8 @@ public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String,
         os.write(response.getBytes());
         os.close();
 
-        // After completing the request, retrieve metrics from ICount
-        long methodsExecuted = ICount.getExecutedMethodCount();
-        long basicBlocksExecuted = ICount.getExecutedBasicBlockCount();
-        long instructionsExecuted = ICount.getExecutedInstructionCount();
-
-        // Log metrics (you can also save them to a file here)
-        System.out.println("Metrics after request:");
-        System.out.println("Methods Executed: " + methodsExecuted);
-        System.out.println("Basic Blocks Executed: " + basicBlocksExecuted);
-        System.out.println("Instructions Executed: " + instructionsExecuted);
+        // Log metrics
+        ICount.printStatistics();
     }
 
     public Map<String, String> queryToMap(String query) {

@@ -21,6 +21,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import pt.ulisboa.tecnico.cnv.javassist.tools.ICount;
 
+
 public abstract class ImageProcessingHandler implements HttpHandler, RequestHandler<Map<String,String>, String> {
 
     abstract BufferedImage process(BufferedImage bi) throws IOException;
@@ -65,16 +66,8 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
         os.write(output.getBytes());
         os.close();
 
-        // After completing the request, retrieve metrics from ICount
-        long methodsExecuted = ICount.getExecutedMethodCount();
-        long basicBlocksExecuted = ICount.getExecutedBasicBlockCount();
-        long instructionsExecuted = ICount.getExecutedInstructionCount();
-
-        // Log metrics (you can also save them to a file here)
-        System.out.println("Metrics after request:");
-        System.out.println("Methods Executed: " + methodsExecuted);
-        System.out.println("Basic Blocks Executed: " + basicBlocksExecuted);
-        System.out.println("Instructions Executed: " + instructionsExecuted);
+        // Log metrics
+        ICount.printStatistics();
     }
 
     @Override
