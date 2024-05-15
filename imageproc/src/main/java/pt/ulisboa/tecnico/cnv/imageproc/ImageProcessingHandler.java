@@ -67,7 +67,7 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
         os.close();
 
         // Log metrics
-        ICount.printStatistics();
+        ICount.printStatistics("imageproc");
     }
 
     @Override

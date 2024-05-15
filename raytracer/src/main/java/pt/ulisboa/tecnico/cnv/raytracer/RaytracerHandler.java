@@ -74,7 +74,7 @@ public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String,
         os.close();
 
         // Log metrics
-        ICount.printStatistics();
+        ICount.printStatistics("raytracer");
     }
 
     public Map<String, String> queryToMap(String query) {

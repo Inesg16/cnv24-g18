@@ -5,6 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
 
@@ -54,20 +57,41 @@ public class ICount extends CodeDumper {
     public static void printStatistics() throws IOException {
 
         long currentThreadId = Thread.currentThread().getId();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String time = LocalTime.now().format(dtf);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("icount-metrics.out", true))) {
-            writer.write(String.format("--- \n"));
-            writer.write(String.format("%s [%s] Number of executed methods: %s \n", currentThreadId, ICount.class.getSimpleName(), nmethods));
-            writer.write(String.format("%s [%s] Number of executed basic blocks: %s \n", currentThreadId, ICount.class.getSimpleName(), nblocks));
-            writer.write(String.format("%s [%s] Number of executed instructions: %s \n", currentThreadId, ICount.class.getSimpleName(), ninsts));
-            writer.write(String.format("--- \n"));
+            /*
+             * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
+             */
+            writer.write(String.format("[%s] %s @unknown | %s | %s | %s\n", currentThreadId, time, nmethods, nblocks, ninsts));
         } catch (IOException e) {
             e.printStackTrace();
         }
+        /*
+         * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
+         */
+        System.out.println(String.format("[%s] %s @unknown | %s | %s | %s\n", currentThreadId, time, nmethods, nblocks, ninsts));
+    }
 
-        System.out.println(String.format("[%s] Number of executed methods: %s", ICount.class.getSimpleName(), nmethods));
-        System.out.println(String.format("[%s] Number of executed basic blocks: %s", ICount.class.getSimpleName(), nblocks));
-        System.out.println(String.format("[%s] Number of executed instructions: %s", ICount.class.getSimpleName(), ninsts));
+    public static void printStatistics(String reqtype) throws IOException {
+
+        long currentThreadId = Thread.currentThread().getId();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String time = LocalTime.now().format(dtf);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("icount-metrics.out", true))) {
+            /*
+             * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
+             */
+            writer.write(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods, nblocks, ninsts));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        /*
+         * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
+         */
+        System.out.println(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods, nblocks, ninsts));
     }
 
     @Override
