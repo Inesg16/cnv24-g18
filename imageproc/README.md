@@ -1,4 +1,4 @@
-## Image Processing
+## Image Processing (original, follow the main README)
 
 This project contains functionality to blur and enhance images.
 

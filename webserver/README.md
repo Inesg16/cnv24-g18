@@ -1,4 +1,4 @@
-## Web Server
+## Web Server (original, follow the main README)
 
 This project contains a web server that exposes functionality of the Ray Tracing and Image Processing projects.
 

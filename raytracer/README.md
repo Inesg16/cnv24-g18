@@ -1,4 +1,4 @@
-## Ray Tracing
+## Ray Tracing (original, follow the main README)
 
 This project contains functionality to render 3D scenes with ray tracing.
 
