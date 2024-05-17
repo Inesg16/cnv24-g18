@@ -11,47 +11,69 @@ import java.time.format.DateTimeFormatter;
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
 
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
 
 public class ICount extends CodeDumper {
 
     /**
      * Number of executed basic blocks.
      */
-    private static long nblocks = 0;
+    private static Dictionary<Long, Integer> nblocks = new Hashtable<>();
 
     /**
      * Number of executed methods.
      */
-    private static long nmethods = 0;
+    private static Dictionary<Long, Integer> nmethods= new Hashtable<>();
 
     /**
      * Number of executed instructions.
      */
-    private static long ninsts = 0;
+    private static Dictionary<Long, Integer> ninsts= new Hashtable<>();
 
     public ICount(List<String> packageNameList, String writeDestination) {
         super(packageNameList, writeDestination);
     }
 
     public static long getExecutedMethodCount() {
-        return nmethods;
+        return nmethods.get(Thread.currentThread().getId());
     }
 
     public static long getExecutedBasicBlockCount() {
-        return nblocks;
+        return nblocks.get(Thread.currentThread().getId());
     }
 
     public static long getExecutedInstructionCount() {
-        return ninsts;
+        return ninsts.get(Thread.currentThread().getId());
     }
 
     public static void incBasicBlock(int position, int length) {
-        nblocks++;
-        ninsts += length;
+        if(nblocks.get(Thread.currentThread().getId()) != null){
+            int updatedValue = nblocks.get(Thread.currentThread().getId()) + 1;
+            nblocks.put(Thread.currentThread().getId(), updatedValue);
+        }
+        else{
+            nblocks.put(Thread.currentThread().getId(), 1);
+        }
+        if(ninsts.get(Thread.currentThread().getId()) != null){
+            int updatedValue = ninsts.get(Thread.currentThread().getId()) + 1;
+            ninsts.put(Thread.currentThread().getId(), updatedValue);
+        }
+        else{
+            ninsts.put(Thread.currentThread().getId(), 1);
+        }
     }
 
     public static void incBehavior(String name) {
-        nmethods++;
+        if(nmethods.get(Thread.currentThread().getId()) != null){
+            int updatedValue = nmethods.get(Thread.currentThread().getId()) + 1;
+            nmethods.put(Thread.currentThread().getId(), updatedValue);
+        }
+        else{
+            nmethods.put(Thread.currentThread().getId(), 1);
+        }
     }
 
     public static void printStatistics() throws IOException {
@@ -64,14 +86,17 @@ public class ICount extends CodeDumper {
             /*
              * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
              */
-            writer.write(String.format("[%s] %s @unknown | %s | %s | %s\n", currentThreadId, time, nmethods, nblocks, ninsts));
+            writer.write(String.format("[%s] %s @unknown | %s | %s | %s\n", currentThreadId, time, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
         } catch (IOException e) {
             e.printStackTrace();
         }
         /*
          * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
          */
-        System.out.println(String.format("[%s] %s @unknown | %s | %s | %s\n", currentThreadId, time, nmethods, nblocks, ninsts));
+        System.out.println(String.format("[%s] %s @unknown | %s | %s | %s\n", currentThreadId, time, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
+        nblocks.remove(Thread.currentThread().getId());
+        nmethods.remove(Thread.currentThread().getId());
+        ninsts.remove(Thread.currentThread().getId());
     }
 
     public static void printStatistics(String reqtype) throws IOException {
@@ -84,14 +109,17 @@ public class ICount extends CodeDumper {
             /*
              * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
              */
-            writer.write(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods, nblocks, ninsts));
+            writer.write(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
         } catch (IOException e) {
             e.printStackTrace();
         }
         /*
          * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
          */
-        System.out.println(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods, nblocks, ninsts));
+        System.out.println(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
+        nblocks.remove(Thread.currentThread().getId());
+        nmethods.remove(Thread.currentThread().getId());
+        ninsts.remove(Thread.currentThread().getId());
     }
 
     @Override
