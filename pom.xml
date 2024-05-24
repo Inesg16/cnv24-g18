@@ -17,6 +17,7 @@
 		<module>imageproc</module>
 		<module>webserver</module>
 		<module>javassist</module>
+		<module>loadbalancer</module>
 	</modules>
 
 </project>
