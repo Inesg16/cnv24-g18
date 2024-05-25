@@ -56,7 +56,7 @@ public class ClientHandler implements Runnable {
 
     private int getDesiredCapacity() {
         // Retrieve current desired capacity of the ASG
-        DescribeAutoScalingGroupsRequest request = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames("your-asg-name"); // Replace with your ASG name
+        DescribeAutoScalingGroupsRequest request = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScaler.getAutoScalingGroupName());
         DescribeAutoScalingGroupsResult result = autoScaler.describeAutoScalingGroups(request);
         return result.getAutoScalingGroups().get(0).getDesiredCapacity();
     }

@@ -5,20 +5,21 @@ import com.amazonaws.services.lambda.*;
 import com.amazonaws.services.ec2.*;
 import com.amazonaws.services.dynamodbv2.*;
 import com.amazonaws.*;
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoadBalancer {
 
     private AmazonDynamoDB dynamoDB;
     private AmazonEC2 ec2;
     private AWSLambda lambda;
-    private Map<String, Integer> metricsCache;
+    private AutoScaler autoScaler;
 
-    public LoadBalancer(AmazonDynamoDB dynamoDB, AmazonEC2 ec2, AWSLambda lambda, Map<String, Integer> metricsCache) {
+    public LoadBalancer(AmazonDynamoDB dynamoDB, AmazonEC2 ec2, AWSLambda lambda, AutoScaler autoScaler) {
         this.dynamoDB = dynamoDB;
         this.ec2 = ec2;
         this.lambda = lambda;
-        this.metricsCache = metricsCache;
+        this.autoScaler = autoScaler;
     }
 
     public String handleRequest(String requestType) {
@@ -28,12 +29,13 @@ public class LoadBalancer {
         if (complexity < getThreshold()) {
             return invokeLambda(requestType);
         } else {
-            return forwardToVM(requestType);
+            return forwardToWorker(requestType);
         }
     }
 
     private int estimateComplexity(String requestType) {
-        return metricsCache.getOrDefault(requestType, 0);
+        //TODO: Estimate complexity
+        return 0;
     }
 
     private int getThreshold() {
@@ -45,8 +47,12 @@ public class LoadBalancer {
         return "Lambda response";
     }
 
-    private String forwardToVM(String requestType) {
+    private String forwardToWorker(String requestType) {
         // TODO: Implement VM forwarding logic
+        // TODO: Round-Robin
+
+        List<String> activeWorkerIPs = autoScaler.getActiveInstanceIPs();
+        System.out.println(activeWorkerIPs);
         return "VM response";
     }
 }
