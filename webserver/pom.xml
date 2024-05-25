@@ -27,6 +27,13 @@
           <artifactId>JavassistWrapper</artifactId>
           <version>1.0</version> <!-- Update version as needed -->
       </dependency>
+
+        <!-- AWS SDK for DynamoDB -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-dynamodb</artifactId>
+            <version>1.12.728</version>
+        </dependency>
   </dependencies>
 
   <build>

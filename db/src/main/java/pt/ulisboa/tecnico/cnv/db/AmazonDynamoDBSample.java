@@ -1,63 +1,56 @@
-package pt.ulisboa.tecnico.cnv.webserver;
-
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
-import com.sun.net.httpserver.HttpServer;
 
-import pt.ulisboa.tecnico.cnv.imageproc.BlurImageHandler;
-import pt.ulisboa.tecnico.cnv.imageproc.EnhanceImageHandler;
-import pt.ulisboa.tecnico.cnv.raytracer.RaytracerHandler;
+/**
+ * This sample demonstrates how to perform a few simple operations with the
+ * Amazon DynamoDB service.
+ */
+public class AmazonDynamoDBSample {
 
-public class WebServer {
+    // TODO - fill fields with correct values.
+    private static String AWS_REGION = "us-east-2";
 
-    private static String AWS_REGION = "eu-north-1";
     private static AmazonDynamoDB dynamoDB;
 
     public static void main(String[] args) throws Exception {
-
-        // HTTP server
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
-        server.createContext("/", new RootHandler());
-        server.createContext("/raytracer", new RaytracerHandler());
-        server.createContext("/blurimage", new BlurImageHandler());
-        server.createContext("/enhanceimage", new EnhanceImageHandler());
-        server.start();
-
-        // DynamoDB
         dynamoDB = AmazonDynamoDBClientBuilder.standard()
             .withCredentials(new EnvironmentVariableCredentialsProvider())
             .withRegion(AWS_REGION)
             .build();
 
         try {
-            String tableName = "instanceIP";
+            String tableName = "my-favorite-movies-table";
 
             // Create a table with a primary hash key named 'name', which holds a string
             CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName)
-                .withKeySchema(new KeySchemaElement().withAttributeName("threadID").withKeyType(KeyType.HASH))
-                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("threadID").withAttributeType(ScalarAttributeType.S))
+                .withKeySchema(new KeySchemaElement().withAttributeName("name").withKeyType(KeyType.HASH))
+                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("name").withAttributeType(ScalarAttributeType.S))
                 .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L));
 
             // Create table if it does not exist yet
@@ -70,18 +63,13 @@ public class WebServer {
             TableDescription tableDescription = dynamoDB.describeTable(describeTableRequest).getTable();
             System.out.println("Table Description: " + tableDescription);
 
-            // Add an items
-            // TODO - ir buscar as metricas (imgeproc tem de retornar as metricas para alem da imagem output)
-            int threadID = 1;
-            String time = "00:00:00";
-            String requestType = "imageproc/raytracer";
-            int numExecutedMethods = 0;
-            int numExecutedBB = 0;
-            int numExecutedInstructions = 0;
-            dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
+            // Add an item
+            dynamoDB.putItem(new PutItemRequest(tableName, newItem("Bill & Ted's Excellent Adventure", 1989, "****", "James", "Sara")));
+
+            // Add another item
+            dynamoDB.putItem(new PutItemRequest(tableName, newItem("Airplane", 1980, "*****", "James", "Billy Bob")));
 
             // Scan items for movies with a year attribute greater than 1985
-            /*
             HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
             Condition condition = new Condition()
                 .withComparisonOperator(ComparisonOperator.GT.toString())
@@ -90,7 +78,6 @@ public class WebServer {
             ScanRequest scanRequest = new ScanRequest(tableName).withScanFilter(scanFilter);
             ScanResult scanResult = dynamoDB.scan(scanRequest);
             System.out.println("Result: " + scanResult);
-            */
 
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it "
@@ -108,14 +95,15 @@ public class WebServer {
         }
     }
 
-    private static Map<String, AttributeValue> newItem(int threadID, String time, String requestType, int numExecutedMethods, int numExecutedBB, int numExecutedInstructions) {
+    private static Map<String, AttributeValue> newItem(String threadID, String time, String requestType, int numExecutedMethods, int numExecutedBB, int numExecutedInstructions) {
         Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-        item.put("threadID", new AttributeValue().withN(Integer.toString(threadID)));
-        item.put("time", new AttributeValue(time));
-        item.put("requestType", new AttributeValue(requestType));
-        item.put("numExecutedMethods", new AttributeValue().withN(Integer.toString(numExecutedMethods)));
-        item.put("numExecutedBB", new AttributeValue().withN(Integer.toString(numExecutedBB)));
-        item.put("numExecutedInstructions", new AttributeValue().withN(Integer.toString(numExecutedInstructions)));
+        item.put("ThreadID", new AttributeValue(threadID));
+        item.put("Time", new AttributeValue(time));
+        item.put("RequestType", new AttributeValue(requestType));
+        item.put("NumExecutedMethods", new AttributeValue().withN(Integer.toString(numExecutedMethods)));
+        item.put("NumExecutedBB", new AttributeValue().withN(Integer.toString(numExecutedBB)));
+        item.put("NumExecutedInstructions", new AttributeValue().withN(Integer.toString(numExecutedInstructions)));
         return item;
     }
+
 }
