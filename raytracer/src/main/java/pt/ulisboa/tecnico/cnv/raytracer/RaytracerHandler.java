@@ -1,5 +1,8 @@
 package pt.ulisboa.tecnico.cnv.raytracer;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -13,7 +16,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.URI;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -22,6 +28,15 @@ import java.util.Map;
 import pt.ulisboa.tecnico.cnv.javassist.tools.ICount;
 
 public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String, String>, String> {
+
+    private AmazonDynamoDB dynamoDB;
+
+    public RaytracerHandler() {
+    }
+
+    public RaytracerHandler(AmazonDynamoDB dynamoDB) {
+        this.dynamoDB = dynamoDB;
+    }
 
     private final static ObjectMapper mapper = new ObjectMapper();
 
@@ -75,6 +90,30 @@ public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String,
 
         // Log metrics
         ICount.printStatistics("raytracer");
+
+        long threadID = Thread.currentThread().getId();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String time = LocalTime.now().format(dtf);
+        String requestType = "raytracer";
+        long numExecutedMethods = ICount.getExecutedMethodCount();
+        long numExecutedBB = ICount.getExecutedBasicBlockCount();
+        long numExecutedInstructions = ICount.getExecutedInstructionCount();
+
+        String tableName = InetAddress.getLocalHost().getHostAddress().replace(".", "-");
+
+        dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
+
+    }
+
+    private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
+        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
+        item.put("threadID", new AttributeValue().withN(Long.toString(threadID)));
+        item.put("time", new AttributeValue(time));
+        item.put("requestType", new AttributeValue(requestType));
+        item.put("numExecutedMethods", new AttributeValue().withN(Long.toString(numExecutedMethods)));
+        item.put("numExecutedBB", new AttributeValue().withN(Long.toString(numExecutedBB)));
+        item.put("numExecutedInstructions", new AttributeValue().withN(Long.toString(numExecutedInstructions)));
+        return item;
     }
 
     public Map<String, String> queryToMap(String query) {

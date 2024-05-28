@@ -8,12 +8,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.sun.net.httpserver.HttpExchange;
@@ -23,6 +30,15 @@ import pt.ulisboa.tecnico.cnv.javassist.tools.ICount;
 
 
 public abstract class ImageProcessingHandler implements HttpHandler, RequestHandler<Map<String,String>, String> {
+
+    private AmazonDynamoDB dynamoDB;
+
+    public ImageProcessingHandler() {
+    }
+
+    public ImageProcessingHandler(AmazonDynamoDB dynamoDB) {
+        this.dynamoDB = dynamoDB;
+    }
 
     abstract BufferedImage process(BufferedImage bi) throws IOException;
 
@@ -68,6 +84,29 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
 
         // Log metrics
         ICount.printStatistics("imageproc");
+
+        long threadID = Thread.currentThread().getId();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String time = LocalTime.now().format(dtf);
+        String requestType = "imageproc";
+        long numExecutedMethods = ICount.getExecutedMethodCount();
+        long numExecutedBB = ICount.getExecutedBasicBlockCount();
+        long numExecutedInstructions = ICount.getExecutedInstructionCount();
+
+        String tableName = InetAddress.getLocalHost().getHostAddress().replace(".", "-");
+
+        dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
+    }
+
+    private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
+        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
+        item.put("threadID", new AttributeValue().withN(Long.toString(threadID)));
+        item.put("time", new AttributeValue(time));
+        item.put("requestType", new AttributeValue(requestType));
+        item.put("numExecutedMethods", new AttributeValue().withN(Long.toString(numExecutedMethods)));
+        item.put("numExecutedBB", new AttributeValue().withN(Long.toString(numExecutedBB)));
+        item.put("numExecutedInstructions", new AttributeValue().withN(Long.toString(numExecutedInstructions)));
+        return item;
     }
 
     @Override

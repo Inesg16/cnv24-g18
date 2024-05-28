@@ -1,14 +1,15 @@
 package pt.ulisboa.tecnico.cnv.webserver;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.UnknownHostException;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
@@ -23,6 +24,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
+import com.amazonaws.services.dynamodbv2.util.TableUtils.TableNeverTransitionedToStateException;
 import com.sun.net.httpserver.HttpServer;
 
 import pt.ulisboa.tecnico.cnv.imageproc.BlurImageHandler;
@@ -40,38 +42,19 @@ public class WebServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
         server.createContext("/", new RootHandler());
-        server.createContext("/raytracer", new RaytracerHandler());
-        server.createContext("/blurimage", new BlurImageHandler());
-        server.createContext("/enhanceimage", new EnhanceImageHandler());
+        server.createContext("/raytracer", new RaytracerHandler(dynamoDB));
+        server.createContext("/blurimage", new BlurImageHandler(dynamoDB));
+        server.createContext("/enhanceimage", new EnhanceImageHandler(dynamoDB));
         server.start();
 
-        // DynamoDB
-        dynamoDB = AmazonDynamoDBClientBuilder.standard()
-            .withCredentials(new EnvironmentVariableCredentialsProvider())
-            .withRegion(AWS_REGION)
-            .build();
-
         try {
-            String tableName = "instanceIP";
-
-            // Create a table with a primary hash key named 'name', which holds a string
-            CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName)
-                .withKeySchema(new KeySchemaElement().withAttributeName("threadID").withKeyType(KeyType.HASH))
-                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("threadID").withAttributeType(ScalarAttributeType.S))
-                .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L));
-
-            // Create table if it does not exist yet
-            TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
-            // wait for the table to move into ACTIVE state
-            TableUtils.waitUntilActive(dynamoDB, tableName);
-
-            // Describe our new table
-            DescribeTableRequest describeTableRequest = new DescribeTableRequest().withTableName(tableName);
-            TableDescription tableDescription = dynamoDB.describeTable(describeTableRequest).getTable();
-            System.out.println("Table Description: " + tableDescription);
+            // DynamoDB
+            initializeDynamoDB();
+            String tableName = getInstanceIP();
+            createTable(dynamoDB, tableName);
 
             // Add an items
-            // TODO - ir buscar as metricas (imgeproc tem de retornar as metricas para alem da imagem output)
+            /*
             int threadID = 1;
             String time = "00:00:00";
             String requestType = "imageproc/raytracer";
@@ -79,6 +62,7 @@ public class WebServer {
             int numExecutedBB = 0;
             int numExecutedInstructions = 0;
             dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
+            */
 
             // Scan items for movies with a year attribute greater than 1985
             /*
@@ -108,14 +92,36 @@ public class WebServer {
         }
     }
 
-    private static Map<String, AttributeValue> newItem(int threadID, String time, String requestType, int numExecutedMethods, int numExecutedBB, int numExecutedInstructions) {
-        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-        item.put("threadID", new AttributeValue().withN(Integer.toString(threadID)));
-        item.put("time", new AttributeValue(time));
-        item.put("requestType", new AttributeValue(requestType));
-        item.put("numExecutedMethods", new AttributeValue().withN(Integer.toString(numExecutedMethods)));
-        item.put("numExecutedBB", new AttributeValue().withN(Integer.toString(numExecutedBB)));
-        item.put("numExecutedInstructions", new AttributeValue().withN(Integer.toString(numExecutedInstructions)));
-        return item;
+    private static String getInstanceIP() throws UnknownHostException{
+        try {
+            return InetAddress.getLocalHost().getHostAddress().replace(".", "-");
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Failed to get instance IP", e);
+        }
+    }
+
+    private static void initializeDynamoDB() {
+        dynamoDB = AmazonDynamoDBClientBuilder.standard()
+            .withCredentials(new EnvironmentVariableCredentialsProvider())
+            .withRegion(AWS_REGION)
+            .build();
+    }
+
+    private static void createTable(AmazonDynamoDB dynamoDB, String tableName) throws TableNeverTransitionedToStateException, InterruptedException {
+        // Create a table with a primary hash key named 'name', which holds a string
+        CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName)
+        .withKeySchema(new KeySchemaElement().withAttributeName("threadID").withKeyType(KeyType.HASH))
+        .withAttributeDefinitions(new AttributeDefinition().withAttributeName("threadID").withAttributeType(ScalarAttributeType.S))
+        .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L));
+
+        // Create table if it does not exist yet
+        TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
+        // wait for the table to move into ACTIVE state
+        TableUtils.waitUntilActive(dynamoDB, tableName);
+
+        // Describe our new table
+        DescribeTableRequest describeTableRequest = new DescribeTableRequest().withTableName(tableName);
+        TableDescription tableDescription = dynamoDB.describeTable(describeTableRequest).getTable();
+        System.out.println("Table Description: " + tableDescription);
     }
 }

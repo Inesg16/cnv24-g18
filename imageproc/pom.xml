@@ -16,6 +16,12 @@
       <artifactId>aws-lambda-java-core</artifactId>
       <version>1.2.1</version>
     </dependency>
+    <!-- AWS SDK for DynamoDB -->
+    <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-dynamodb</artifactId>
+        <version>1.12.728</version>
+    </dependency>
     <dependency>
       <groupId>org.boofcv</groupId>
       <artifactId>boofcv-core</artifactId>

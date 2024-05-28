@@ -6,7 +6,17 @@ import boofcv.io.image.UtilImageIO;
 import boofcv.struct.image.GrayU8;
 import java.awt.image.BufferedImage;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+
 public class EnhanceImageHandler extends ImageProcessingHandler {
+
+    public EnhanceImageHandler() {
+        super();
+    }
+    
+    public EnhanceImageHandler(AmazonDynamoDB dynamoDB) {
+        super(dynamoDB);
+    }
 
     public BufferedImage process(BufferedImage bi) {
         GrayU8 gray = ConvertBufferedImage.convertFrom(bi, (GrayU8)null);

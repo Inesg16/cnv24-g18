@@ -8,7 +8,19 @@ import boofcv.struct.image.ImageType;
 import boofcv.struct.image.Planar;
 import java.awt.image.BufferedImage;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+
+
+
 public class BlurImageHandler extends ImageProcessingHandler {
+
+    public BlurImageHandler() {
+        super();
+    }
+    
+    public BlurImageHandler(AmazonDynamoDB dynamoDB) {
+        super(dynamoDB);
+    }
 
     public BufferedImage process(BufferedImage bi) {
         Planar<GrayU8> input = ConvertBufferedImage.convertFrom(bi, true, ImageType.pl(3, GrayU8.class));
