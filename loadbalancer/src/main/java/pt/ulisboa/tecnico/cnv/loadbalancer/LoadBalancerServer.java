@@ -20,6 +20,8 @@ public class LoadBalancerServer {
     private AutoScaler autoScaler;
     private final int port = 8080;
     private ExecutorService threadPool;
+    private static final String MYREGION = "eu-west-3";
+    private static final String MYASGNAME = "cnv-autoscalinggroup";
 
     public LoadBalancerServer(LoadBalancer loadBalancer, AutoScaler autoScaler) {
         this.loadBalancer = loadBalancer;
@@ -39,34 +41,46 @@ public class LoadBalancerServer {
 
     public static void main(String[] args) throws IOException {
         // Initialize AWS region and AutoScaling group name
-        String MYREGION = "eu-west-3";
-        String MYASGNAME = "cnv-autoscalinggroup";
 
         // Initialize AWS service clients using default credential provider chain
-        AmazonAutoScaling autoScaling = AmazonAutoScalingClientBuilder.standard()
-                .withRegion(MYREGION)
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                .build();
+        AmazonAutoScaling autoScaling = createAutoScalingClient();
+        AmazonDynamoDB dynamoDB = createDynamoDBClient();
+        AmazonEC2 ec2 = createEC2Client();
+        AWSLambda lambda = createLambdaClient();
 
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.standard()
-                .withRegion(MYREGION)
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                .build();
-
-        AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-                .withRegion(MYREGION)
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                .build();
-
-        AWSLambda lambda = AWSLambdaClientBuilder.standard()
-                .withRegion(MYREGION)
-                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-                .build();
 
         AutoScaler autoScaler = new AutoScaler(autoScaling, MYASGNAME, ec2);
         LoadBalancer loadBalancer = new LoadBalancer(dynamoDB, ec2, lambda, autoScaler);
 
         LoadBalancerServer server = new LoadBalancerServer(loadBalancer, autoScaler);
         server.start();
+    }
+
+    private static AmazonAutoScaling createAutoScalingClient(){
+        return AmazonAutoScalingClientBuilder.standard()
+            .withRegion(MYREGION)
+            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+            .build();
+    }
+
+    private static AmazonDynamoDB createDynamoDBClient(){
+        return AmazonDynamoDBClientBuilder.standard()
+            .withRegion(MYREGION)
+            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+            .build();
+    }
+
+    private static AmazonEC2 createEC2Client(){
+        return AmazonEC2ClientBuilder.standard()
+            .withRegion(MYREGION)
+            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+            .build();
+    }
+
+    private static AWSLambda createLambdaClient(){
+        return AWSLambdaClientBuilder.standard()
+            .withRegion(MYREGION)
+            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+            .build();
     }
 }

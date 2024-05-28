@@ -32,7 +32,7 @@ public class AutoScaler {
     }
 
     public void adjustAutoScalingGroup(int currentLoad, int desiredCapacity) {
-        // TODO: Change the way it gets the threshold so it uses our metrics from the dynamoDB
+        // TODO: Change the way it gets the threshold so it uses our metrics from CloudWatch
         if (currentLoad > getHighLoadThreshold()) {
             increaseASGCapacity(desiredCapacity + 1);
         } else if (currentLoad < getLowLoadThreshold()) {
@@ -60,12 +60,12 @@ public class AutoScaler {
     }
 
     private int getHighLoadThreshold() {
-        // TODO: Change the way it gets the threshold so it uses our metrics from the dynamoDB
+        // TODO: Change the way it gets the threshold so it uses our metrics from CloudWatch
         return 80; // Example threshold value
     }
 
     private int getLowLoadThreshold() {
-        // TODO: Change the way it gets the threshold so it uses our metrics from the dynamoDB
+        // TODO: Change the way it gets the threshold so it uses our metrics from CloudWatch
         return 20; // Example threshold value
     }
 
