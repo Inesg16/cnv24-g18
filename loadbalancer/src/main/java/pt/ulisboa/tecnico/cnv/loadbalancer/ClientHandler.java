@@ -33,10 +33,7 @@ public class ClientHandler implements Runnable {
 
             out.println(result);
 
-            // Auto-scaling logic
-            int currentLoad = getCurrentLoad();
-            int desiredCapacity = getDesiredCapacity();
-            autoScaler.adjustAutoScalingGroup(currentLoad, desiredCapacity);
+            autoScaler.adjustAutoScalingGroup();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -52,12 +49,5 @@ public class ClientHandler implements Runnable {
     private int getCurrentLoad() {
         // TODO: Implement logic to get current load
         return 0;
-    }
-
-    private int getDesiredCapacity() {
-        // Retrieve current desired capacity of the ASG
-        DescribeAutoScalingGroupsRequest request = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScaler.getAutoScalingGroupName());
-        DescribeAutoScalingGroupsResult result = autoScaler.describeAutoScalingGroups(request);
-        return result.getAutoScalingGroups().get(0).getDesiredCapacity();
     }
 }

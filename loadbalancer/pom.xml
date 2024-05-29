@@ -35,6 +35,13 @@
             <version>1.12.728</version>
         </dependency>
 
+        <!-- AWS SDK for Cloud Watch -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-cloudwatch</artifactId>
+            <version>1.12.300</version>
+        </dependency>
+
         <!-- Servlet API -->
         <dependency>
             <groupId>javax.servlet</groupId>

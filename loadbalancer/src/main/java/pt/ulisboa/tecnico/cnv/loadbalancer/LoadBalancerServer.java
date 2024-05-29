@@ -4,14 +4,11 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.lambda.AWSLambda;
-import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
+import com.amazonaws.services.ec2.*;
+import com.amazonaws.services.autoscaling.*;
+import com.amazonaws.services.dynamodbv2.*;
+import com.amazonaws.services.lambda.*;
+import com.amazonaws.services.cloudwatch.*;
 
 public class LoadBalancerServer {
 
@@ -33,6 +30,9 @@ public class LoadBalancerServer {
         serverSocket = new ServerSocket(port);
         System.out.println("Load Balancer is running on port " + port);
 
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(() -> autoScaler.adjustAutoScalingGroup(), 0, 5, TimeUnit.MINUTES);
+
         while (true) {
             Socket clientSocket = serverSocket.accept();
             threadPool.execute(new ClientHandler(clientSocket, loadBalancer, autoScaler));
@@ -40,47 +40,51 @@ public class LoadBalancerServer {
     }
 
     public static void main(String[] args) throws IOException {
-        // Initialize AWS region and AutoScaling group name
-
-        // Initialize AWS service clients using default credential provider chain
         AmazonAutoScaling autoScaling = createAutoScalingClient();
         AmazonDynamoDB dynamoDB = createDynamoDBClient();
         AmazonEC2 ec2 = createEC2Client();
         AWSLambda lambda = createLambdaClient();
+        AmazonCloudWatch cloudWatch = createCloudWatchClient();
 
-
-        AutoScaler autoScaler = new AutoScaler(autoScaling, MYASGNAME, ec2);
+        AutoScaler autoScaler = new AutoScaler(autoScaling, MYASGNAME, ec2, cloudWatch);
         LoadBalancer loadBalancer = new LoadBalancer(dynamoDB, ec2, lambda, autoScaler);
 
         LoadBalancerServer server = new LoadBalancerServer(loadBalancer, autoScaler);
         server.start();
     }
 
-    private static AmazonAutoScaling createAutoScalingClient(){
+    private static AmazonAutoScaling createAutoScalingClient() {
         return AmazonAutoScalingClientBuilder.standard()
-            .withRegion(MYREGION)
-            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-            .build();
+                .withRegion(MYREGION)
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .build();
     }
 
-    private static AmazonDynamoDB createDynamoDBClient(){
+    private static AmazonDynamoDB createDynamoDBClient() {
         return AmazonDynamoDBClientBuilder.standard()
-            .withRegion(MYREGION)
-            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-            .build();
+                .withRegion(MYREGION)
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .build();
     }
 
-    private static AmazonEC2 createEC2Client(){
+    private static AmazonEC2 createEC2Client() {
         return AmazonEC2ClientBuilder.standard()
-            .withRegion(MYREGION)
-            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-            .build();
+                .withRegion(MYREGION)
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .build();
     }
 
-    private static AWSLambda createLambdaClient(){
+    private static AWSLambda createLambdaClient() {
         return AWSLambdaClientBuilder.standard()
-            .withRegion(MYREGION)
-            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-            .build();
+                .withRegion(MYREGION)
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .build();
+    }
+
+    private static AmazonCloudWatch createCloudWatchClient() {
+        return AmazonCloudWatchClientBuilder.standard()
+                .withRegion(MYREGION)
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .build();
     }
 }
