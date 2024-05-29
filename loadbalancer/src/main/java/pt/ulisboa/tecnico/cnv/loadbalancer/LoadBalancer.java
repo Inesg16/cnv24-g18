@@ -40,7 +40,7 @@ public class LoadBalancer {
     }
 
     public String handleRequest(String requestType) {
-        int complexity = estimateComplexity(requestType);
+        double complexity = estimateComplexity(requestType);
 
         // TODO: Change the way the loadbalancer distributes the requests
         if (complexity < getThreshold()) {
@@ -50,14 +50,76 @@ public class LoadBalancer {
         }
     }
 
-    private int estimateComplexity(String requestType) {
-        //TODO: Estimate complexity
-        return 0;
+    private double estimateComplexity(String requestType) {
+        
+        double w1 = 0.5; // Executed Instructions
+        double w2 = 0.3; // Executed Basic Blocks
+        double w3 = 0.2; // Executed Methods
+        
+        int reqWeight = 0; // can be 1 if blurimage or enhanceimage, 2 if raytracer
+        double complexity;
+
+        if (requestType == "imageproc"){
+            reqWeight = 1;
+        }
+        if (requestType == "raytracer"){
+            reqWeight = 2;
+        }
+
+        double avgNumExecutedInstructions = getAvgNumExecutedInstructions();
+        double avgNumExecutedBB = getAvgNumExecutedBB();
+        double avgNumExecutedMethods = getAvgNumExecutedMethods();
+
+        complexity = reqWeight * (w1*avgNumExecutedInstructions + w2*avgNumExecutedBB + w3*avgNumExecutedMethods);
+
+        return complexity;
+    }
+
+    private double getAvgNumExecutedInstructions(){
+        double sum = 0;
+        int i = 0;
+        for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics) {
+            double num = Double.valueOf((itemMetrics.get("numExecutedInstructions")).getN());
+            sum = sum + num;
+            i += 1;
+        }
+        if (i == 0){
+            return 0;
+        }
+        return sum/i;
+    }
+
+    private double getAvgNumExecutedBB(){
+        double sum = 0;
+        int i = 0;
+        for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics) {
+            double num = Double.valueOf((itemMetrics.get("numExecutedBB")).getN());
+            sum = sum + num;
+            i += 1;
+        }
+        if (i == 0){
+            return 0;
+        }
+        return sum/i;
+    }
+
+    private double getAvgNumExecutedMethods(){
+        double sum = 0;
+        int i = 0;
+        for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics) {
+            double num = Double.valueOf((itemMetrics.get("numExecutedMethods")).getN());
+            sum = sum + num;
+            i += 1;
+        }
+        if (i == 0){
+            return 0;
+        }
+        return sum/i;
     }
 
     private int getThreshold() {
         //TODO: Define a reasonable threshold
-        return 50;
+        return 0;
     }
 
     private String invokeLambda(String requestType) {
