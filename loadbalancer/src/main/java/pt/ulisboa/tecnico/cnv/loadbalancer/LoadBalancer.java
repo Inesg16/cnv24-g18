@@ -15,11 +15,18 @@ import com.amazonaws.*;
 import java.time.Instant;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Collections;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import java.io.IOException;
+
 
 public class LoadBalancer {
 
@@ -77,8 +84,19 @@ public class LoadBalancer {
 
         // TODO: Based on the metrics fetched from each of the available machines, estimate the weight of the request
         // TODO: On a tie apply a load balancing algorythm (i.e: round robbin, leat connection)
-
-        return "VM response";
+        String WORKER_IP = "";
+        String WORKER_PORT = "8000";
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + requestType))
+            .POST(HttpRequest.BodyPublishers.ofString(requestType))
+            .build();
+        try {
+            return client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "Error occurred while forwarding request to worker: " + e.getMessage();
+        }
     }
 
     public void getDynamoDBMetrics(){

@@ -26,14 +26,13 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
             String requestType = in.readLine();
+            System.out.println("Recieved request: " + requestType);
             String result = loadBalancer.handleRequest(requestType);
 
             out.println(result);
-
-            autoScaler.adjustAutoScalingGroup();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -44,10 +43,5 @@ public class ClientHandler implements Runnable {
                 e.printStackTrace();
             }
         }
-    }
-
-    private int getCurrentLoad() {
-        // TODO: Implement logic to get current load
-        return 0;
     }
 }
