@@ -109,14 +109,14 @@ public class ICount extends CodeDumper {
             /*
              * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
              */
-            writer.write(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
+            writer.write(String.format("%s|%s|%s|%s|%s|%s\n", currentThreadId, time, reqtype, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
         } catch (IOException e) {
             e.printStackTrace();
         }
         /*
          * [Thread ID] Time @request-type | Num-executed-methods | Num-executed-bb | Num-executed-instructions
          */
-        System.out.println(String.format("[%s] %s @%s | %s | %s | %s\n", currentThreadId, time, reqtype, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
+        System.out.println(String.format("%s|%s|%s|%s|%s|%s\n", currentThreadId, time, reqtype, nmethods.get(Thread.currentThread().getId()), nblocks.get(Thread.currentThread().getId()), ninsts.get(Thread.currentThread().getId())));
         nblocks.remove(Thread.currentThread().getId());
         nmethods.remove(Thread.currentThread().getId());
         ninsts.remove(Thread.currentThread().getId());

@@ -90,30 +90,6 @@ public class RaytracerHandler implements HttpHandler, RequestHandler<Map<String,
 
         // Log metrics
         ICount.printStatistics("raytracer");
-
-        long threadID = Thread.currentThread().getId();
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-        String time = LocalTime.now().format(dtf);
-        String requestType = "raytracer";
-        long numExecutedMethods = ICount.getExecutedMethodCount();
-        long numExecutedBB = ICount.getExecutedBasicBlockCount();
-        long numExecutedInstructions = ICount.getExecutedInstructionCount();
-
-        String tableName = InetAddress.getLocalHost().getHostAddress().replace(".", "-");
-
-        dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
-
-    }
-
-    private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
-        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-        item.put("threadID", new AttributeValue().withN(Long.toString(threadID)));
-        item.put("time", new AttributeValue(time));
-        item.put("requestType", new AttributeValue(requestType));
-        item.put("numExecutedMethods", new AttributeValue().withN(Long.toString(numExecutedMethods)));
-        item.put("numExecutedBB", new AttributeValue().withN(Long.toString(numExecutedBB)));
-        item.put("numExecutedInstructions", new AttributeValue().withN(Long.toString(numExecutedInstructions)));
-        return item;
     }
 
     public Map<String, String> queryToMap(String query) {

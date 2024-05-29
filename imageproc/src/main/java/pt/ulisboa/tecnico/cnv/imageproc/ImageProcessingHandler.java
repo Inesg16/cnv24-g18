@@ -84,18 +84,6 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
 
         // Log metrics
         ICount.printStatistics("imageproc");
-
-        long threadID = Thread.currentThread().getId();
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-        String time = LocalTime.now().format(dtf);
-        String requestType = "imageproc";
-        long numExecutedMethods = ICount.getExecutedMethodCount();
-        long numExecutedBB = ICount.getExecutedBasicBlockCount();
-        long numExecutedInstructions = ICount.getExecutedInstructionCount();
-
-        String tableName = InetAddress.getLocalHost().getHostAddress().replace(".", "-");
-
-        dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
     }
 
     private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {

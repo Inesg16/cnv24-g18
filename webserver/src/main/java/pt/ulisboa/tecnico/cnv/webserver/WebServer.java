@@ -31,38 +31,35 @@ import pt.ulisboa.tecnico.cnv.imageproc.BlurImageHandler;
 import pt.ulisboa.tecnico.cnv.imageproc.EnhanceImageHandler;
 import pt.ulisboa.tecnico.cnv.raytracer.RaytracerHandler;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.io.*;
+import java.util.*;
+
 public class WebServer {
 
     private static String AWS_REGION = "eu-north-1";
     private static AmazonDynamoDB dynamoDB;
+    private static final String METRICS_FILE_PATH = "icount-metrics.out";
+    private final ExecutorService threadPool = Executors.newCachedThreadPool();
 
     public static void main(String[] args) throws Exception {
-
-        // HTTP server
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
-        server.createContext("/", new RootHandler());
-        server.createContext("/raytracer", new RaytracerHandler(dynamoDB));
-        server.createContext("/blurimage", new BlurImageHandler(dynamoDB));
-        server.createContext("/enhanceimage", new EnhanceImageHandler(dynamoDB));
-        server.start();
-
         try {
             // DynamoDB
             initializeDynamoDB();
-            String tableName = getInstanceIP();
+            String tableName = "MetricsTable";
             createTable(dynamoDB, tableName);
 
-            // Add an items
-            /*
-            int threadID = 1;
-            String time = "00:00:00";
-            String requestType = "imageproc/raytracer";
-            int numExecutedMethods = 0;
-            int numExecutedBB = 0;
-            int numExecutedInstructions = 0;
-            dynamoDB.putItem(new PutItemRequest(tableName, newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
-            */
+            // Creates a scheduler for the metrics
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(() -> WebServer.sendMetricsToDatabase(), 0, 30, TimeUnit.SECONDS);
 
             // Scan items for movies with a year attribute greater than 1985
             /*
@@ -90,6 +87,16 @@ public class WebServer {
                     + "such as not being able to access the network.");
             System.out.println("Error Message: " + ace.getMessage());
         }
+
+        // HTTP server
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
+        server.createContext("/", new RootHandler());
+        server.createContext("/raytracer", new RaytracerHandler(dynamoDB));
+        server.createContext("/blurimage", new BlurImageHandler(dynamoDB));
+        server.createContext("/enhanceimage", new EnhanceImageHandler(dynamoDB));
+        server.start();
+
     }
 
     private static String getInstanceIP() throws UnknownHostException{
@@ -123,5 +130,49 @@ public class WebServer {
         DescribeTableRequest describeTableRequest = new DescribeTableRequest().withTableName(tableName);
         TableDescription tableDescription = dynamoDB.describeTable(describeTableRequest).getTable();
         System.out.println("Table Description: " + tableDescription);
+    }
+
+     private static void sendMetricsToDatabase() {
+        String filename = "icount-metrics.out";
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(filename));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                dynamoDB.putItem(new PutItemRequest("MetricsTable", parseLine(line)));
+            }
+            reader.close();
+
+            // Delete all lines from the file
+            PrintWriter writer = new PrintWriter(filename);
+            writer.print(""); // Writing an empty string to the file
+            writer.close();
+            System.out.println("Sent metrics to DynamoDB");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Map<String, AttributeValue> parseLine(String line) {
+        String[] parts = line.split("\\|");
+        long threadID = Long.parseLong(parts[0]);
+        String time = parts[1];
+        String requestType = parts[2];
+        long numExecutedMethods = Long.parseLong(parts[3]);
+        long numExecutedBB = Long.parseLong(parts[4]);
+        long numExecutedInstructions = Long.parseLong(parts[5]);
+
+        return newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions);
+    }
+
+    private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put("threadID", new AttributeValue().withN(Long.toString(threadID)));
+        item.put("time", new AttributeValue(time));
+        item.put("requestType", new AttributeValue(requestType));
+        item.put("numExecutedMethods", new AttributeValue().withN(Long.toString(numExecutedMethods)));
+        item.put("numExecutedBB", new AttributeValue().withN(Long.toString(numExecutedBB)));
+        item.put("numExecutedInstructions", new AttributeValue().withN(Long.toString(numExecutedInstructions)));
+        return item;
     }
 }
