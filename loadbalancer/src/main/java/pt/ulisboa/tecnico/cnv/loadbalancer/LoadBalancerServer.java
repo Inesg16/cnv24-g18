@@ -30,8 +30,11 @@ public class LoadBalancerServer {
         serverSocket = new ServerSocket(port);
         System.out.println("Load Balancer is running on port " + port);
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(() -> autoScaler.adjustAutoScalingGroup(), 0, 5, TimeUnit.MINUTES);
+        ScheduledExecutorService autoScalerScheduler = Executors.newScheduledThreadPool(1);
+        autoScalerScheduler.scheduleAtFixedRate(() -> autoScaler.adjustAutoScalingGroup(), 0, 5, TimeUnit.MINUTES);
+
+        ScheduledExecutorService loadBalancerScheduler = Executors.newScheduledThreadPool(1);
+        loadBalancerScheduler.scheduleAtFixedRate(() -> loadBalancer.getDynamoDBMetrics(), 0, 5, TimeUnit.MINUTES);
 
         while (true) {
             Socket clientSocket = serverSocket.accept();

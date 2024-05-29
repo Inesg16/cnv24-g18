@@ -61,18 +61,6 @@ public class WebServer {
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(() -> WebServer.sendMetricsToDatabase(), 0, 30, TimeUnit.SECONDS);
 
-            // Scan items for movies with a year attribute greater than 1985
-            /*
-            HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
-            Condition condition = new Condition()
-                .withComparisonOperator(ComparisonOperator.GT.toString())
-                .withAttributeValueList(new AttributeValue().withN("1985"));
-            scanFilter.put("year", condition);
-            ScanRequest scanRequest = new ScanRequest(tableName).withScanFilter(scanFilter);
-            ScanResult scanResult = dynamoDB.scan(scanRequest);
-            System.out.println("Result: " + scanResult);
-            */
-
         } catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it "
                     + "to AWS, but was rejected with an error response for some reason.");
