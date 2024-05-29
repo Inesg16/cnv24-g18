@@ -117,8 +117,8 @@ public class WebServer {
     private static void createTable(AmazonDynamoDB dynamoDB, String tableName) throws TableNeverTransitionedToStateException, InterruptedException {
         // Create a table with a primary hash key named 'name', which holds a string
         CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName)
-        .withKeySchema(new KeySchemaElement().withAttributeName("threadID").withKeyType(KeyType.HASH))
-        .withAttributeDefinitions(new AttributeDefinition().withAttributeName("threadID").withAttributeType(ScalarAttributeType.S))
+        .withKeySchema(new KeySchemaElement().withAttributeName("ip").withKeyType(KeyType.HASH))
+        .withAttributeDefinitions(new AttributeDefinition().withAttributeName("ip").withAttributeType(ScalarAttributeType.S))
         .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L));
 
         // Create table if it does not exist yet
@@ -153,7 +153,8 @@ public class WebServer {
         }
     }
 
-    private static Map<String, AttributeValue> parseLine(String line) {
+    private static Map<String, AttributeValue> parseLine(String line) throws UnknownHostException {
+        String ip = getInstanceIP(); // ip as xx-xx-xx-xx
         String[] parts = line.split("\\|");
         long threadID = Long.parseLong(parts[0]);
         String time = parts[1];
@@ -162,11 +163,12 @@ public class WebServer {
         long numExecutedBB = Long.parseLong(parts[4]);
         long numExecutedInstructions = Long.parseLong(parts[5]);
 
-        return newItem(threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions);
+        return newItem(ip, threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions);
     }
 
-    private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
+    private static Map<String, AttributeValue> newItem(String ip, long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
         Map<String, AttributeValue> item = new HashMap<>();
+        item.put("ip", new AttributeValue(ip));
         item.put("threadID", new AttributeValue().withN(Long.toString(threadID)));
         item.put("time", new AttributeValue(time));
         item.put("requestType", new AttributeValue(requestType));
