@@ -10,8 +10,6 @@ import com.amazonaws.services.autoscaling.*;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 
-
-
 public class ClientHandler implements Runnable {
 
     private Socket clientSocket;
@@ -77,8 +75,8 @@ public class ClientHandler implements Runnable {
                 return;
             }
             String requestPayload = new String(body);
-            byte[] decoded = Base64.getDecoder().decode(requestPayload);
             System.out.println("Received payload: " + requestPayload);
+            byte[] decoded = Base64.getDecoder().decode(requestPayload);
 
             // Process the request
             String result = loadBalancer.handleRequest(requestType, requestPayload);
