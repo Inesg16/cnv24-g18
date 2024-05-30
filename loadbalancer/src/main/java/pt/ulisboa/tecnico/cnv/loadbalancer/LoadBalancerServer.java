@@ -3,12 +3,16 @@ package pt.ulisboa.tecnico.cnv.loadbalancer;
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.*;
 import com.amazonaws.services.autoscaling.*;
 import com.amazonaws.services.dynamodbv2.*;
 import com.amazonaws.services.lambda.*;
 import com.amazonaws.services.cloudwatch.*;
+
+import com.sun.net.httpserver.HttpServer;
+
 
 public class LoadBalancerServer {
 
@@ -36,11 +40,9 @@ public class LoadBalancerServer {
 
         ScheduledExecutorService loadBalancerScheduler = Executors.newScheduledThreadPool(1);
         loadBalancerScheduler.scheduleAtFixedRate(() -> loadBalancer.getDynamoDBMetrics(), 0, 5, TimeUnit.MINUTES);
-
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
-            threadPool.execute(new ClientHandler(clientSocket, loadBalancer, autoScaler));
-        }
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        server.createContext("/", new ClientHandler(null, loadBalancer, autoScaler));
+        server.start();
     }
 
     public static void main(String[] args) throws IOException {

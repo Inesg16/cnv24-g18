@@ -2,103 +2,49 @@ package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import java.io.*;
 import java.net.*;
-import java.util.Map;
-import java.util.Base64;
-import java.util.HashMap;
-import com.amazonaws.*;
-import com.amazonaws.services.autoscaling.*;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
+import java.util.stream.Collectors;
 
-public class ClientHandler implements Runnable {
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+
+public class ClientHandler implements HttpHandler {
 
     private Socket clientSocket;
     private LoadBalancer loadBalancer;
     private AutoScaler autoScaler;
 
     public ClientHandler(Socket socket, LoadBalancer loadBalancer, AutoScaler autoScaler) {
-        this.clientSocket = socket;
         this.loadBalancer = loadBalancer;
         this.autoScaler = autoScaler;
     }
 
     @Override
-    public void run() {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+    public void handle(HttpExchange t) throws IOException {
+        // Handling CORS
+        t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
-            // Read the request line
-            String requestLine = in.readLine();
-            if (requestLine == null || requestLine.isEmpty()) {
-                out.println("Invalid request: Request line is empty.");
-                return;
-            }
-            System.out.println("Received request: " + requestLine);
-
-            // Split the request line by spaces
-            String[] parts = requestLine.split("\\s+");
-            String requestType = "";
-
-            // Extract the requestType from the request line (blurimage, raytracer, enhanceimage)
-            if (parts.length >= 2) {
-                requestType = parts[1].substring(1);
-            } else {
-                out.println("There was a formatting error while processing your request.");
-                return;
-            }
-
-            // Read the headers
-            String headerLine;
-            int contentLength = 0;
-            while ((headerLine = in.readLine()) != null && !headerLine.isEmpty()) {
-                if (headerLine.startsWith("Content-Length:")) {
-                    try {
-                        contentLength = Integer.parseInt(headerLine.split(":")[1].trim());
-                    } catch (NumberFormatException e) {
-                        out.println("Invalid Content-Length header.");
-                        return;
-                    }
-                }
-            }
-
-            // Ensure Content-Length is valid
-            if (contentLength <= 0) {
-                out.println("Invalid Content-Length header.");
-                return;
-            }
-
-            // Read the request body (payload)
-            char[] body = new char[contentLength];
-            int readChars = in.read(body, 0, contentLength);
-            if (readChars != contentLength) {
-                out.println("Error reading request body.");
-                return;
-            }
-            String requestPayload = new String(body);
-
-            // Extract and decode the Base64 payload
-            if (requestPayload.startsWith("data:image/jpg;base64,")) {
-                String base64Payload = requestPayload.substring("data:image/jpg;base64,".length());
-                byte[] decoded = Base64.getDecoder().decode(base64Payload);
-                System.out.println("Manteiga!");
-
-                // Process the request
-                String result = loadBalancer.handleRequest(requestType, "decoded");
-
-                // Send the response
-                out.println(result);
-            } else {
-                out.println("Invalid payload format.");
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+            t.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+            t.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type,Authorization");
+            t.sendResponseHeaders(204, -1);
+            return;
         }
+
+        InputStream stream = t.getRequestBody();
+        String result = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+        System.out.println("Received payload: " + result);  // Log the received payload
+        String[] resultSplits = result.split(",");
+        String format = resultSplits[0].split("/")[1].split(";")[0];
+
+        String output = loadBalancer.handleRequest(resultSplits[1], format);
+        output = String.format("data:image/%s;base64,%s", format, output);
+        System.out.println("Got the following output:" + output);
+
+        t.sendResponseHeaders(200, output.length());
+        OutputStream os = t.getResponseBody();
+        os.write(output.getBytes());
+        os.close();
+
+
     }
 }
