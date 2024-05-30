@@ -38,6 +38,7 @@ public class ClientHandler implements Runnable {
             // Split the request line by spaces
             String[] parts = requestLine.split("\\s+");
             String requestType = "";
+            System.out.println(parts.length);
 
             // Extract the requestType from the request line (blurimage, raytracer, enhanceimage)
             if (parts.length >= 2) {
