@@ -75,7 +75,6 @@ public class ClientHandler implements Runnable {
                 return;
             }
             String requestPayload = new String(body);
-            System.out.println("Received payload: " + requestPayload);
 
             // Extract and decode the Base64 payload
             if (requestPayload.startsWith("data:image/jpg;base64,")) {
