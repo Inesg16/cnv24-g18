@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import java.io.IOException;
@@ -187,6 +188,8 @@ public class LoadBalancer {
 
     // Create the HTTP client and request
     HttpClient client = HttpClient.newHttpClient();
+    byte[] decoded = Base64.getDecoder().decode(requestPayload);
+    System.out.println("DECODED REQUEST PAYLOAD");
     HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + requestType))
         .header("Content-Type", "application/x-www-form-urlencoded") // Use the appropriate content type

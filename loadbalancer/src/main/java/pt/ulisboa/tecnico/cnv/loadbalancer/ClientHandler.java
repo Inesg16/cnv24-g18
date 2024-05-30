@@ -78,7 +78,6 @@ public class ClientHandler implements Runnable {
             }
             String requestPayload = new String(body);
             byte[] decoded = Base64.getDecoder().decode(requestPayload);
-            System.out.println(decoded);
             System.out.println("Received payload: " + requestPayload);
 
             // Process the request
