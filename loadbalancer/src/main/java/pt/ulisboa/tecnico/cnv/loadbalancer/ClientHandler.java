@@ -25,7 +25,7 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
             // Read the request line
             String requestLine = in.readLine();
@@ -46,7 +46,7 @@ public class ClientHandler implements Runnable {
                 out.println("There was a formatting error while processing your request.");
                 return;
             }
-            System.out.println(requestType);
+
             // Read the headers
             String headerLine;
             int contentLength = 0;
@@ -76,13 +76,21 @@ public class ClientHandler implements Runnable {
             }
             String requestPayload = new String(body);
             System.out.println("Received payload: " + requestPayload);
-            byte[] decoded = Base64.getDecoder().decode(requestPayload);
 
-            // Process the request
-            String result = loadBalancer.handleRequest(requestType, requestPayload);
+            // Extract and decode the Base64 payload
+            if (requestPayload.startsWith("data:image/jpg;base64,")) {
+                String base64Payload = requestPayload.substring("data:image/jpg;base64,".length());
+                byte[] decoded = Base64.getDecoder().decode(base64Payload);
+                System.out.println("Manteiga!");
 
-            // Send the response
-            out.println(result);
+                // Process the request
+                String result = loadBalancer.handleRequest(requestType, "decoded");
+
+                // Send the response
+                out.println(result);
+            } else {
+                out.println("Invalid payload format.");
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
