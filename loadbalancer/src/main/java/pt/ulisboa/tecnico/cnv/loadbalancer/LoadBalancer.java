@@ -188,6 +188,7 @@ public class LoadBalancer {
 
     // Create the HTTP client and request
     HttpClient client = HttpClient.newHttpClient();
+    System.out.println("Forwarding to worker " + workerIP);
     byte[] decoded = Base64.getDecoder().decode(requestPayload);
     System.out.println("DECODED REQUEST PAYLOAD");
     HttpRequest request = HttpRequest.newBuilder()
