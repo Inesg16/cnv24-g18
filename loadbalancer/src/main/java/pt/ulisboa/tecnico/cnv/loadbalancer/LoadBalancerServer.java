@@ -31,7 +31,6 @@ public class LoadBalancerServer {
     }
 
     public void start() throws IOException {
-        serverSocket = new ServerSocket(port);
         System.out.println("Load Balancer is running on port " + port);
         loadBalancer.getDynamoDBMetrics();
 
