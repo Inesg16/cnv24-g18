@@ -53,12 +53,16 @@ public class LoadBalancer {
         if (complexity < getThreshold()) {
             return invokeLambda(requestType);
         } else {
-            return forwardToWorker(requestType);
+            String workerIP = estimateBestWorker();
+            return forwardToWorker(requestType, workerIP);
         }
     }
 
     private double estimateComplexity(String requestType) {
-        
+        if (this.dynamoDB == null | this.dynamoDBMetrics == null){
+            return 0;
+        }
+
         double w1 = 0.5; // Executed Instructions
         double w2 = 0.3; // Executed Basic Blocks
         double w3 = 0.2; // Executed Methods
@@ -73,22 +77,55 @@ public class LoadBalancer {
             reqWeight = 2;
         }
 
-        double avgNumExecutedInstructions = getAvgNumExecutedInstructions();
-        double avgNumExecutedBB = getAvgNumExecutedBB();
-        double avgNumExecutedMethods = getAvgNumExecutedMethods();
+        double avgNumExecutedInstructions = getAvgNumExecutedInstructions(requestType);
+        double avgNumExecutedBB = getAvgNumExecutedBB(requestType);
+        double avgNumExecutedMethods = getAvgNumExecutedMethods(requestType);
 
         complexity = reqWeight * (w1*avgNumExecutedInstructions + w2*avgNumExecutedBB + w3*avgNumExecutedMethods);
+        System.out.println("Request complexity of <" + requestType + "> is:" + complexity);
 
         return complexity;
     }
 
-    private double getAvgNumExecutedInstructions(){
+    private String estimateBestWorker(){
+        // <IP, num de requests>
+        Map<String, Integer> instancesComplexity = new HashMap<>();
+        String bestWorkerIp = null;
+
+        // populates map of ips and numof requests
+        for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics){
+            String ip = itemMetrics.get("ip").getS();
+            // se o ip ja esta no map
+            if (instancesComplexity.containsKey(ip)){
+                // soma o número de requests que foram feitos
+                int numReq = instancesComplexity.get(ip);
+                instancesComplexity.put(ip, numReq+1);
+            } else { //se o ip nao esta no mapa, adiciona
+                instancesComplexity.put(ip, 0);
+            }
+        }
+
+        // compares num of requests and chooses best worker
+        Integer minValue = null;
+        for (Map.Entry<String, Integer> entry : instancesComplexity.entrySet()) {
+            Integer value = entry.getValue();
+            if (minValue == null || value < minValue) {
+                minValue = value;
+                bestWorkerIp = entry.getKey();
+            }
+        }
+        return bestWorkerIp;
+    }
+
+    private double getAvgNumExecutedInstructions(String requestType){
         double sum = 0;
         int i = 0;
         for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics) {
-            double num = Double.valueOf((itemMetrics.get("numExecutedInstructions")).getN());
-            sum = sum + num;
-            i += 1;
+            if (itemMetrics.get("requestType").getS().equals(requestType)){
+                double num = Double.valueOf((itemMetrics.get("numExecutedInstructions")).getN());
+                sum = sum + num;
+                i += 1;
+            }
         }
         if (i == 0){
             return 0;
@@ -96,13 +133,15 @@ public class LoadBalancer {
         return sum/i;
     }
 
-    private double getAvgNumExecutedBB(){
+    private double getAvgNumExecutedBB(String requestType){
         double sum = 0;
         int i = 0;
         for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics) {
-            double num = Double.valueOf((itemMetrics.get("numExecutedBB")).getN());
-            sum = sum + num;
-            i += 1;
+            if (itemMetrics.get("requestType").getS().equals(requestType)){
+                double num = Double.valueOf((itemMetrics.get("numExecutedBB")).getN());
+                sum = sum + num;
+                i += 1;
+            }
         }
         if (i == 0){
             return 0;
@@ -110,13 +149,15 @@ public class LoadBalancer {
         return sum/i;
     }
 
-    private double getAvgNumExecutedMethods(){
+    private double getAvgNumExecutedMethods(String requestType){
         double sum = 0;
         int i = 0;
         for (Map<String, AttributeValue> itemMetrics : dynamoDBMetrics) {
-            double num = Double.valueOf((itemMetrics.get("numExecutedMethods")).getN());
-            sum = sum + num;
-            i += 1;
+            if (itemMetrics.get("requestType").getS().equals(requestType)){
+                double num = Double.valueOf((itemMetrics.get("numExecutedMethods")).getN());
+                sum = sum + num;
+                i += 1;
+            }
         }
         if (i == 0){
             return 0;
@@ -138,15 +179,10 @@ public class LoadBalancer {
         return response;
     }
 
-    private String forwardToWorker(String requestType) {
+    private String forwardToWorker(String requestType, String workerIP) {
         // TODO: Implement VM forwarding logic
 
-        activeWorkerIPs = autoScaler.getActiveInstanceIPs();
-        System.out.println(activeWorkerIPs);
-
-        // TODO: Based on the metrics fetched from each of the available machines, estimate the weight of the request
-        // TODO: On a tie apply a load balancing algorythm (i.e: round robbin, leat connection)
-        String WORKER_IP = "";
+        String WORKER_IP = workerIP.replace("-", ".");;
         String WORKER_PORT = "8000";
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -183,5 +219,6 @@ public class LoadBalancer {
 
         ScanResult result = dynamoDB.scan(scanRequest);
         dynamoDBMetrics = result.getItems();
+        System.out.println("Got metrics from DB:\n" + dynamoDBMetrics);
     }
 }

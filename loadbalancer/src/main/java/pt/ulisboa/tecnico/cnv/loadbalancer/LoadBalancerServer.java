@@ -15,10 +15,10 @@ public class LoadBalancerServer {
     private ServerSocket serverSocket;
     private LoadBalancer loadBalancer;
     private AutoScaler autoScaler;
-    private final int port = 8080;
+    private final int port = 8000;
     private ExecutorService threadPool;
-    private static final String MYREGION = "eu-west-3";
-    private static final String MYASGNAME = "cnv-autoscalinggroup";
+    private static final String MYREGION = "eu-north-1";
+    private static final String MYASGNAME = "Proj";
 
     public LoadBalancerServer(LoadBalancer loadBalancer, AutoScaler autoScaler) {
         this.loadBalancer = loadBalancer;
@@ -29,6 +29,7 @@ public class LoadBalancerServer {
     public void start() throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("Load Balancer is running on port " + port);
+        loadBalancer.getDynamoDBMetrics();
 
         ScheduledExecutorService autoScalerScheduler = Executors.newScheduledThreadPool(1);
         autoScalerScheduler.scheduleAtFixedRate(() -> autoScaler.adjustAutoScalingGroup(), 0, 5, TimeUnit.MINUTES);

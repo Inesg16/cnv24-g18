@@ -31,6 +31,8 @@ import pt.ulisboa.tecnico.cnv.imageproc.BlurImageHandler;
 import pt.ulisboa.tecnico.cnv.imageproc.EnhanceImageHandler;
 import pt.ulisboa.tecnico.cnv.raytracer.RaytracerHandler;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -139,6 +141,19 @@ public class WebServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void helloDatabase() throws UnknownHostException{
+        String ip = getInstanceIP();
+        long threadID = Thread.currentThread().getId();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        String time = LocalTime.now().format(dtf);
+        String requestType = "hello";
+        long numExecutedMethods = 0;
+        long numExecutedBB = 0;
+        long numExecutedInstructions = 0;
+
+        newItem(ip, threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions);
     }
 
     private static Map<String, AttributeValue> parseLine(String line) throws UnknownHostException {

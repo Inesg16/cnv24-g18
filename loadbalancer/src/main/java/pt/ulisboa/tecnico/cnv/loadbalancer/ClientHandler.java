@@ -28,8 +28,19 @@ public class ClientHandler implements Runnable {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
-            String requestType = in.readLine();
-            System.out.println("Recieved request: " + requestType);
+            String requestLine = in.readLine();
+            System.out.println("Recieved request: " + requestLine);
+            // Split the request line by spaces
+            String[] parts = requestLine.split("\\s+");
+            String requestType = "";
+
+            // Extract the requestType from the request line (blurimage, raytracer, enhanceimage)
+            if (parts.length >= 2) {
+                requestType = parts[1].substring(1);
+            } else {
+                out.println("There was a formating error while processing your request");
+            }
+
             String result = loadBalancer.handleRequest(requestType);
 
             out.println(result);
