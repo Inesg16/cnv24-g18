@@ -48,15 +48,15 @@ public class LoadBalancer {
         this.activeWorkerIPs = new ArrayList<>();
     }
 
-    public String handleRequest(String requestType) {
+    public String handleRequest(String requestType, String requestPayload) {
         double complexity = estimateComplexity(requestType);
 
         // TODO: Change the way the loadbalancer distributes the requests
         if (complexity < getThreshold()) {
-            return invokeLambda(requestType);
+            return invokeLambda(requestType, requestPayload);
         } else {
             String workerIP = estimateBestWorker();
-            return forwardToWorker(requestType, workerIP);
+            return forwardToWorker(requestType, workerIP, requestPayload);
         }
     }
 
@@ -172,24 +172,23 @@ public class LoadBalancer {
         return 0;
     }
 
-    private String invokeLambda(String requestType) {
+    private String invokeLambda(String requestType, String requestPayload) {
         // TODO: Change payload and lambda function name
-        InvokeRequest invokeRequest = new InvokeRequest().withFunctionName("myLambdaFunction").withPayload("{ \"key\": \"value\" }");
+        InvokeRequest invokeRequest = new InvokeRequest().withFunctionName("myLambdaFunction").withPayload(requestPayload);
         InvokeResult invokeResult = lambda.invoke(invokeRequest);
         String response = new String(invokeResult.getPayload().array(), StandardCharsets.UTF_8);
         System.out.println("Lambda response: " + response);
         return response;
     }
 
-    private String forwardToWorker(String requestType, String workerIP) {
-        // TODO: Implement VM forwarding logic
+    private String forwardToWorker(String requestType, String workerIP, String requestPayload) {
 
         String WORKER_IP = workerIP.replace("-", ".");;
         String WORKER_PORT = "8000";
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + requestType))
-            .POST(HttpRequest.BodyPublishers.ofString(requestType))
+            .POST(HttpRequest.BodyPublishers.ofString(requestPayload))
             .build();
         try {
             return client.send(request, HttpResponse.BodyHandlers.ofString()).body();

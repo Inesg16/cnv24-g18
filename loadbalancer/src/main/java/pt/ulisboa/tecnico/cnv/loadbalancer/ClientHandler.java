@@ -41,7 +41,22 @@ public class ClientHandler implements Runnable {
                 out.println("There was a formating error while processing your request");
             }
 
-            String result = loadBalancer.handleRequest(requestType);
+            // Read the headers
+            String headerLine;
+            int contentLength = 0;
+            while ((headerLine = in.readLine()) != null && !headerLine.isEmpty()) {
+                if (headerLine.startsWith("Content-Length:")) {
+                    contentLength = Integer.parseInt(headerLine.split(":")[1].trim());
+                }
+            }
+
+            // Read the request body (payload)
+            char[] body = new char[contentLength];
+            in.read(body, 0, contentLength);
+            String requestPayload = new String(body);
+            System.out.println("Received payload: " + requestPayload);
+
+            String result = loadBalancer.handleRequest(requestType, requestPayload);
 
             out.println(result);
 
