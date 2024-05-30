@@ -58,6 +58,7 @@ public class WebServer {
             initializeDynamoDB();
             String tableName = "MetricsTable";
             createTable(dynamoDB, tableName);
+            helloDatabase();
 
             // Creates a scheduler for the metrics
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);

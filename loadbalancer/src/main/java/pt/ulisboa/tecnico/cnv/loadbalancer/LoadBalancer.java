@@ -12,6 +12,8 @@ import com.amazonaws.services.lambda.model.InvokeRequest;
 import com.amazonaws.services.lambda.model.InvokeResult;
 import com.amazonaws.*;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.Instant;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -201,9 +203,12 @@ public class LoadBalancer {
         // Calculate the timestamp for 5 minutes ago
         Instant fiveMinutesAgo = Instant.now().minus(Duration.ofMinutes(5));
 
+        // Convert Instant to ZonedDateTime with a specific time zone
+        ZonedDateTime zonedDateTime = fiveMinutesAgo.atZone(ZoneId.of("UTC"));
+
         // Format the timestamp as a string
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        String fiveMinutesAgoStr = formatter.format(fiveMinutesAgo);
+        String fiveMinutesAgoStr = formatter.format(zonedDateTime);
 
         // Construct the filter expression
         String filterExpression = "#time >= :timeVal";
