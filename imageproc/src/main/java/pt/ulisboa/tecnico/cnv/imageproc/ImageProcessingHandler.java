@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -76,12 +77,11 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
 
         String output = handleRequest(resultSplits[1], format);
         output = String.format("data:image/%s;base64,%s", format, output);
+        System.out.println("Got the following output:" + output);
 
-        byte[] responseBytes = output.getBytes(StandardCharsets.UTF_8);
-        t.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
-        t.sendResponseHeaders(200, responseBytes.length);
+        t.sendResponseHeaders(200, output.length());
         OutputStream os = t.getResponseBody();
-        os.write(responseBytes);
+        os.write(output.getBytes());
         os.close();
 
         // Log metrics
