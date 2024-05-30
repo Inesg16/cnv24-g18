@@ -154,7 +154,7 @@ public class WebServer {
         long numExecutedBB = 0;
         long numExecutedInstructions = 0;
 
-        newItem(ip, threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions);
+        dynamoDB.putItem(new PutItemRequest("MetricsTable", newItem(ip, threadID, time, requestType, numExecutedMethods, numExecutedBB, numExecutedInstructions)));
     }
 
     private static Map<String, AttributeValue> parseLine(String line) throws UnknownHostException {
