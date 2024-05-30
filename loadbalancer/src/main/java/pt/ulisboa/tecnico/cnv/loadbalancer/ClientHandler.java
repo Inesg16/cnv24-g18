@@ -38,7 +38,6 @@ public class ClientHandler implements Runnable {
             // Split the request line by spaces
             String[] parts = requestLine.split("\\s+");
             String requestType = "";
-            System.out.println(parts.length);
 
             // Extract the requestType from the request line (blurimage, raytracer, enhanceimage)
             if (parts.length >= 2) {
@@ -47,7 +46,7 @@ public class ClientHandler implements Runnable {
                 out.println("There was a formatting error while processing your request.");
                 return;
             }
-
+            System.out.println(requestType);
             // Read the headers
             String headerLine;
             int contentLength = 0;
