@@ -182,21 +182,26 @@ public class LoadBalancer {
     }
 
     private String forwardToWorker(String requestType, String workerIP, String requestPayload) {
+    String WORKER_IP = workerIP.replace("-", ".");
+    String WORKER_PORT = "8000";
 
-        String WORKER_IP = workerIP.replace("-", ".");;
-        String WORKER_PORT = "8000";
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + requestType))
-            .POST(HttpRequest.BodyPublishers.ofString(requestPayload))
-            .build();
+    // Create the HTTP client and request
+    HttpClient client = HttpClient.newHttpClient();
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + requestType))
+        .header("Content-Type", "application/x-www-form-urlencoded") // Use the appropriate content type
+        .POST(HttpRequest.BodyPublishers.ofString(requestPayload))
+        .build();
+
         try {
+            // Send the request and get the response
             return client.send(request, HttpResponse.BodyHandlers.ofString()).body();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             return "Error occurred while forwarding request to worker: " + e.getMessage();
         }
     }
+
 
     public void getDynamoDBMetrics(){
         // Calculate the timestamp for 5 minutes ago

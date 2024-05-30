@@ -69,22 +69,25 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
         }
 
         InputStream stream = t.getRequestBody();
-        // Result syntax: data:image/<format>;base64,<encoded image>
         String result = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+        System.out.println("Received payload: " + result);  // Log the received payload
         String[] resultSplits = result.split(",");
         String format = resultSplits[0].split("/")[1].split(";")[0];
 
         String output = handleRequest(resultSplits[1], format);
         output = String.format("data:image/%s;base64,%s", format, output);
 
-        t.sendResponseHeaders(200, output.length());
+        byte[] responseBytes = output.getBytes(StandardCharsets.UTF_8);
+        t.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+        t.sendResponseHeaders(200, responseBytes.length);
         OutputStream os = t.getResponseBody();
-        os.write(output.getBytes());
+        os.write(responseBytes);
         os.close();
 
         // Log metrics
         ICount.printStatistics("imageproc");
     }
+
 
     private static Map<String, AttributeValue> newItem(long threadID, String time, String requestType, long numExecutedMethods, long numExecutedBB, long numExecutedInstructions) {
         Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
