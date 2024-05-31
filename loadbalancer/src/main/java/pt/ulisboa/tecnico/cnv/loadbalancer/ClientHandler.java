@@ -36,7 +36,7 @@ public class ClientHandler implements HttpHandler {
         String[] resultSplits = result.split(",");
         String format = resultSplits[0].split("/")[1].split(";")[0];
 
-        String output = loadBalancer.handleRequest(format, resultSplits[1]);
+        String output = loadBalancer.handleRequest(format, result);
         output = String.format("data:image/%s;base64,%s", format, output);
         System.out.println("Got the following output:" + output);
 
