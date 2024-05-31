@@ -45,6 +45,7 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
 
     private String handleRequest(String inputEncoded, String format) {
         byte[] decoded = Base64.getDecoder().decode(inputEncoded);
+        System.out.println("DECODED");
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(decoded);
             BufferedImage bi = ImageIO.read(bais);
