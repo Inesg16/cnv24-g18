@@ -24,6 +24,7 @@ public class RootHandler implements HttpHandler {
         URI requestedUri = he.getRequestURI();
         String query = requestedUri.getRawQuery();
         System.out.println(query);
+        System.out.println("query");
 
         // After completing the request, retrieve metrics from ICount
         long methodsExecuted = ICount.getExecutedMethodCount();
