@@ -35,7 +35,7 @@ public class ClientHandler implements HttpHandler {
         System.out.println("Received payload: " + result);  // Log the received payload
         String[] resultSplits = result.split(",");
         String format = resultSplits[0].split("/")[1].split(";")[0];
-        System.out.println(resultSplits);
+        System.out.println(resultSplits[1]);
         String output = loadBalancer.handleRequest(resultSplits[1], format);
         output = String.format("data:image/%s;base64,%s", format, output);
         System.out.println("Got the following output:" + output);
