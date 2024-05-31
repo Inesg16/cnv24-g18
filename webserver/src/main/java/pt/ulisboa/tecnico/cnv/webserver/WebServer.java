@@ -125,6 +125,7 @@ public class WebServer {
 
      private static void sendMetricsToDatabase() {
         String filename = "icount-metrics.out";
+        System.out.println("Sending metrics to database");
         try {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
             String line;
