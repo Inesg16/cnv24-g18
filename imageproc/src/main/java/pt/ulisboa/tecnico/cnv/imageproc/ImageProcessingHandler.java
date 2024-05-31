@@ -77,8 +77,6 @@ public abstract class ImageProcessingHandler implements HttpHandler, RequestHand
         String format = resultSplits[0].split("/")[1].split(";")[0];
 
         String output = handleRequest(resultSplits[1], format);
-        output = String.format("data:image/%s;base64,%s", format, output);
-        System.out.println("Got the following output:" + output);
 
         t.sendResponseHeaders(200, output.length());
         OutputStream os = t.getResponseBody();
