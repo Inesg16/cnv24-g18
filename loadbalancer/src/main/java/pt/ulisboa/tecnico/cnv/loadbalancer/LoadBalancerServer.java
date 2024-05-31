@@ -41,6 +41,9 @@ public class LoadBalancerServer {
         loadBalancerScheduler.scheduleAtFixedRate(() -> loadBalancer.getDynamoDBMetrics(), 0, 5, TimeUnit.MINUTES);
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/", new ClientHandler(null, loadBalancer, autoScaler));
+        server.createContext("/blurimage", new ClientHandler(null, loadBalancer, autoScaler));
+        server.createContext("/enhanceimage", new ClientHandler(null, loadBalancer, autoScaler));
+        server.createContext("/raytracer", new ClientHandler(null, loadBalancer, autoScaler));
         server.start();
     }
 

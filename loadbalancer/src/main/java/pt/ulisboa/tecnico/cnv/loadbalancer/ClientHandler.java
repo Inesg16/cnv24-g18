@@ -21,6 +21,7 @@ public class ClientHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange t) throws IOException {
         // Handling CORS
+        System.out.println(t.getRequestMethod());
         t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
         if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
@@ -36,7 +37,7 @@ public class ClientHandler implements HttpHandler {
         String[] resultSplits = result.split(",");
         String format = resultSplits[0].split("/")[1].split(";")[0];
 
-        String output = loadBalancer.handleRequest(format, result);
+        String output = loadBalancer.handleRequest(t.getRequestMethod(), result);
         output = String.format("data:image/%s;base64,%s", format, output);
         System.out.println("Got the following output:" + output);
 
