@@ -189,9 +189,9 @@ public class LoadBalancer {
     // Create the HTTP client and request
     HttpClient client = HttpClient.newHttpClient();
     System.out.println("Forwarding to worker " + workerIP);
-    
+
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + requestType))
+        .uri(URI.create("http://" + WORKER_IP + ":" + WORKER_PORT + "/" + "blurimage"))
         .header("Content-Type", "application/x-www-form-urlencoded") // Use the appropriate content type
         .POST(HttpRequest.BodyPublishers.ofString(requestPayload))
         .build();
