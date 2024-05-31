@@ -9,11 +9,12 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class ClientHandler implements HttpHandler {
 
-    private Socket clientSocket;
+    private String requestType;
     private LoadBalancer loadBalancer;
     private AutoScaler autoScaler;
 
-    public ClientHandler(Socket socket, LoadBalancer loadBalancer, AutoScaler autoScaler) {
+    public ClientHandler(String requestType, LoadBalancer loadBalancer, AutoScaler autoScaler) {
+        this.requestType = requestType;
         this.loadBalancer = loadBalancer;
         this.autoScaler = autoScaler;
     }
@@ -21,7 +22,7 @@ public class ClientHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange t) throws IOException {
         // Handling CORS
-        System.out.println(t.getRequestMethod());
+        System.out.println(this.requestType);
         t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
         if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
@@ -37,7 +38,7 @@ public class ClientHandler implements HttpHandler {
         String[] resultSplits = result.split(",");
         String format = resultSplits[0].split("/")[1].split(";")[0];
 
-        String output = loadBalancer.handleRequest(t.getRequestMethod(), result);
+        String output = loadBalancer.handleRequest(this.requestType, result);
         output = String.format("data:image/%s;base64,%s", format, output);
         System.out.println("Got the following output:" + output);
 
